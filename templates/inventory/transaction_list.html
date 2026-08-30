@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Movimientos de Stock - Inventario Pro{% endblock %}
+{% block header_title %}Movimientos de Stock{% endblock %}
+
+{% block content %}
+<!-- Filtros y acciones -->
+<div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-3 items-end">
+        <div class="sm:w-44">
+            <label class="block text-xs font-medium text-slate-500 mb-1.5">Tipo de Movimiento</label>
+            <select name="type" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="">Todos los tipos</option>
+                <option value="ENTRADA" {% if selected_type == 'ENTRADA' %}selected{% endif %}>Entrada (+)</option>
+                <option value="SALIDA" {% if selected_type == 'SALIDA' %}selected{% endif %}>Salida (-)</option>
+            </select>
+        </div>
+        <div class="flex-1">
+            <label class="block text-xs font-medium text-slate-500 mb-1.5">Producto</label>
+            <select name="product" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="">Todos los productos</option>
+                {% for p in products %}
+                <option value="{{ p.id }}" {% if selected_product == p.id|stringformat:"s" %}selected{% endif %}>{{ p.sku }} - {{ p.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sm:w-48">
+            <label class="block text-xs font-medium text-slate-500 mb-1.5">Usuario</label>
+            <select name="user" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="">Todos los usuarios</option>
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if selected_user == u.id|stringformat:"s" %}selected{% endif %}>{{ u.username }} ({{ u.get_role_display }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors">
+                <i class="fa-solid fa-filter mr-1"></i>Filtrar
+            </button>
+            {% if selected_type or selected_product or selected_user %}
+            <a href="{% url 'transaction_list' %}" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Cabecera -->
+<div class="flex items-center justify-between mb-4">
+    <p class="text-sm text-slate-500">Historial completo de auditoría y movimientos</p>
+    <a href="{% url 'transaction_create' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm">
+        <i class="fa-solid fa-plus-minus"></i> Registrar Movimiento
+    </a>
+</div>
+
+<!-- Tabla de transacciones -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-100 text-left">
+                    <th class="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha / Hora</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Producto</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cantidad</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Stock Resultante</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Responsable</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Notas</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for tx in page_obj %}
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 text-xs text-slate-500 whitespace-nowrap font-medium">
+                        {{ tx.created_at|date:"d/m/Y H:i" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold
+                            {% if tx.transaction_type == 'ENTRADA' %}bg-emerald-100 text-emerald-700{% else %}bg-rose-100 text-rose-700{% endif %}">
+                            <i class="fa-solid {% if tx.transaction_type == 'ENTRADA' %}fa-arrow-down{% else %}fa-arrow-up{% endif %} text-[10px]"></i>
+                            {{ tx.get_transaction_type_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="{% url 'product_detail' tx.product.pk %}" class="font-semibold text-slate-800 hover:text-indigo-600 hover:underline">
+                            {{ tx.product.name }}
+                        </a>
+                        <p class="text-[11px] text-slate-400 font-mono">{{ tx.product.sku }}</p>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-slate-800 text-base">
+                        {% if tx.transaction_type == 'ENTRADA' %}+{% else %}-{% endif %}{{ tx.quantity }}
+                    </td>
+                    <td class="px-6 py-4 text-xs font-semibold text-slate-700">
+                        {{ tx.product.stock_actual }} uds
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-xs font-medium text-slate-800 block">{{ tx.user.username }}</span>
+                        <span class="text-[10px] text-slate-400">{{ tx.user.get_role_display }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-500 hidden md:table-cell max-w-xs truncate">
+                        {{ tx.notes|default:"-" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-400 text-sm">
+                        <i class="fa-solid fa-arrow-right-arrow-left text-3xl mb-3 block text-slate-300"></i>
+                        No hay movimientos registrados con los filtros aplicados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Paginacion -->
+{% if page_obj.has_other_pages %}
+<div class="flex justify-center items-center gap-1 mt-8">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_user %}&user={{ selected_user }}{% endif %}"
+       class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">
+        <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    {% endif %}
+    <span class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium">
+        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_product %}&product={{ selected_product }}{% endif %}{% if selected_user %}&user={{ selected_user }}{% endif %}"
+       class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">
+        <i class="fa-solid fa-chevron-right"></i>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

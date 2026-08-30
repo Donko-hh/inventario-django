@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Control de Inventario{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full text-slate-800 antialiased" x-data="{ sidebarOpen: false }">
+    <div class="min-h-full flex">
+        <!-- Sidebar para Escritorio y Movil -->
+        <aside 
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0 flex flex-col justify-between shadow-xl"
+        >
+            <div>
+                <!-- Brand / Logo -->
+                <div class="h-16 flex items-center px-6 bg-slate-950 border-b border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/30">
+                            <i class="fa-solid fa-boxes-stacked text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-white tracking-wide text-base">Inventario Pro</span>
+                            <span class="block text-[10px] text-slate-400 font-medium uppercase tracking-wider">Django 5 + Supabase</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="p-4 space-y-1.5">
+                    <!-- Dashboard -->
+                    <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+
+                    <!-- Productos -->
+                    <a href="{% url 'product_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'product' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
+                        <i class="fa-solid fa-box-archive w-5 text-center"></i>
+                        <span>Productos</span>
+                    </a>
+
+                    <!-- Categorias -->
+                    <a href="{% url 'category_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'category' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
+                        <i class="fa-solid fa-tags w-5 text-center"></i>
+                        <span>Categorias</span>
+                    </a>
+
+                    <!-- Transacciones de Stock -->
+                    <a href="{% url 'transaction_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'transaction' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
+                        <i class="fa-solid fa-arrow-right-arrow-left w-5 text-center"></i>
+                        <span>Movimientos</span>
+                    </a>
+
+                    <!-- Gestion de Usuarios (Solo Admin) -->
+                    {% if user.is_admin_role %}
+                    <div class="pt-4 pb-1">
+                        <span class="px-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Administracion</span>
+                    </div>
+                    <a href="{% url 'user_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'user' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
+                        <i class="fa-solid fa-users-gear w-5 text-center"></i>
+                        <span>Gestion Usuarios</span>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+
+            <!-- User Footer Card -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/60">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sm text-indigo-400 shrink-0">
+                            {{ user.username|make_list|first|upper }}
+                        </div>
+                        <div class="truncate">
+                            <p class="text-sm font-semibold text-white truncate">{{ user.get_full_name|default:user.username }}</p>
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium 
+                                {% if user.role == 'admin' %}bg-purple-900/80 text-purple-200 border border-purple-700
+                                {% elif user.role == 'bodeguero' %}bg-blue-900/80 text-blue-200 border border-blue-700
+                                {% else %}bg-emerald-900/80 text-emerald-200 border border-emerald-700{% endif %}">
+                                {{ user.get_role_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <a href="{% url 'logout' %}" title="Cerrar sesion" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Backdrop para movil -->
+        <div 
+            x-show="sidebarOpen" 
+            x-transition:enter="transition-opacity ease-linear duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition-opacity ease-linear duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="sidebarOpen = false" 
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden"
+        ></div>
+
+        <!-- Contenedor Principal -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <!-- Top Navbar -->
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="p-2 text-slate-500 hover:text-slate-700 md:hidden rounded-lg hover:bg-slate-100">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-800">
+                        {% block header_title %}Panel de Control{% endblock %}
+                    </h1>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Boton Rapido Registrar Movimiento (Accesible para todos los roles) -->
+                    <a href="{% url 'transaction_create' %}" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium shadow-sm transition-all">
+                        <i class="fa-solid fa-plus-minus"></i>
+                        <span class="hidden sm:inline">Nuevo Movimiento</span>
+                    </a>
+
+                    <!-- Enlace Perfil -->
+                    <a href="{% url 'profile' %}" class="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-user-circle text-lg"></i>
+                        <span class="hidden md:inline font-medium text-slate-700">{{ user.username }}</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50">
+                <!-- Alertas / Mensajes Flash -->
+                {% if messages %}
+                <div class="space-y-3 mb-6">
+                    {% for message in messages %}
+                    <div class="p-4 rounded-xl border flex items-start justify-between shadow-sm transition-all
+                        {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
+                        {% elif message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-800
+                        {% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800
+                        {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}"
+                        x-data="{ show: true }" x-show="show">
+                        <div class="flex items-center gap-3">
+                            <i class="text-lg
+                                {% if message.tags == 'success' %}fa-solid fa-circle-check text-emerald-500
+                                {% elif message.tags == 'error' %}fa-solid fa-circle-xmark text-rose-500
+                                {% elif message.tags == 'warning' %}fa-solid fa-triangle-exclamation text-amber-500
+                                {% else %}fa-solid fa-circle-info text-blue-500{% endif %}"></i>
+                            <p class="text-sm font-medium">{{ message }}</p>
+                        </div>
+                        <button @click="show = false" class="text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

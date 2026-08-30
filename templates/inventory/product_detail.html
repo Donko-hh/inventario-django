@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} - Inventario Pro{% endblock %}
+{% block header_title %}Detalle de Producto{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Info del producto -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">{{ product.category.name }}</span>
+                    {% if product.stock_actual == 0 %}
+                    <span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-bold">Sin Stock</span>
+                    {% elif product.stock_actual <= 5 %}
+                    <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">Stock Bajo</span>
+                    {% else %}
+                    <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">Disponible</span>
+                    {% endif %}
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">{{ product.name }}</h1>
+                <p class="text-slate-400 font-mono text-sm mt-1">{{ product.sku }}</p>
+                {% if product.description %}
+                <p class="text-slate-600 mt-3 text-sm leading-relaxed">{{ product.description }}</p>
+                {% endif %}
+            </div>
+            <div class="sm:text-right shrink-0">
+                <p class="text-slate-400 text-xs mb-0.5">Precio unitario</p>
+                <p class="text-2xl font-bold text-slate-800">${{ product.price|floatformat:2 }}</p>
+                <p class="text-slate-400 text-xs mt-2 mb-0.5">Stock actual</p>
+                <p class="text-3xl font-extrabold {% if product.stock_actual == 0 %}text-rose-600{% elif product.stock_actual <= 5 %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                    {{ product.stock_actual }} <span class="text-base font-medium text-slate-400">uds</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+            <a href="{% url 'transaction_create' %}?product={{ product.pk }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors">
+                <i class="fa-solid fa-plus-minus"></i> Registrar Movimiento
+            </a>
+            {% if not user.is_operario_role %}
+            <a href="{% url 'product_update' product.pk %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <i class="fa-solid fa-pen"></i> Editar
+            </a>
+            {% endif %}
+            <a href="{% url 'product_list' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <i class="fa-solid fa-arrow-left"></i> Volver al catalogo
+            </a>
+        </div>
+    </div>
+
+    <!-- Historial de movimientos -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-semibold text-slate-800">Historial de Movimientos</h2>
+            <a href="{% url 'transaction_list' %}?product={{ product.pk }}" class="text-xs text-indigo-600 hover:underline">Ver todo</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-100">
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cantidad</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Usuario</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Notas</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for tx in transactions %}
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-6 py-3">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                                {% if tx.transaction_type == 'ENTRADA' %}bg-emerald-100 text-emerald-700{% else %}bg-rose-100 text-rose-700{% endif %}">
+                                <i class="fa-solid {% if tx.transaction_type == 'ENTRADA' %}fa-arrow-down{% else %}fa-arrow-up{% endif %} text-[10px]"></i>
+                                {{ tx.get_transaction_type_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-3 font-bold text-slate-800">{{ tx.quantity }}</td>
+                        <td class="px-6 py-3 text-slate-600 hidden sm:table-cell">{{ tx.user.username }}</td>
+                        <td class="px-6 py-3 text-slate-500 text-xs hidden md:table-cell truncate max-w-xs">{{ tx.notes|default:"-" }}</td>
+                        <td class="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{{ tx.created_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center text-slate-400 text-sm">
+                            <i class="fa-solid fa-inbox text-2xl mb-2 block"></i>
+                            No hay movimientos registrados para este producto.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

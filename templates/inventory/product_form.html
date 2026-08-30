@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Inventario Pro{% endblock %}
+{% block header_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
+                    <i class="fa-solid fa-box-archive text-indigo-600"></i>
+                </div>
+                <div>
+                    <h2 class="font-semibold text-slate-800">{{ title }}</h2>
+                    {% if product %}
+                    <p class="text-xs text-slate-400">SKU: {{ product.sku }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <a href="{% url 'product_list' %}" class="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Volver
+            </a>
+        </div>
+
+        <form method="post" class="p-6 space-y-5">
+            {% csrf_token %}
+
+            <!-- SKU y Nombre -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        Codigo SKU <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.sku }}
+                    {% if form.sku.errors %}
+                    <p class="text-xs text-rose-500 mt-1">{{ form.sku.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        Nombre del Producto <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="text-xs text-rose-500 mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Categoria y Precio -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        Categoria <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                    <p class="text-xs text-rose-500 mt-1">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        Precio Unitario (USD) <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">$</span>
+                        <div class="pl-6">{{ form.price }}</div>
+                    </div>
+                    {% if form.price.errors %}
+                    <p class="text-xs text-rose-500 mt-1">{{ form.price.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Descripcion -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Descripcion</label>
+                {{ form.description }}
+            </div>
+
+            {% if product %}
+            <div class="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info"></i>
+                Para modificar el stock, utiliza la seccion de <a href="{% url 'transaction_create' %}?product={{ product.pk }}" class="underline font-medium">Movimientos de Stock</a>.
+                Stock actual: <strong>{{ product.stock_actual }} unidades</strong>
+            </div>
+            {% endif %}
+
+            <!-- Botones -->
+            <div class="flex gap-3 pt-2 border-t border-slate-100">
+                <button type="submit" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-colors shadow-sm">
+                    <i class="fa-solid fa-floppy-disk mr-2"></i>
+                    {% if product %}Guardar Cambios{% else %}Crear Producto{% endif %}
+                </button>
+                <a href="{% url 'product_list' %}" class="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

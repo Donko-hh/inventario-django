@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Inventario Pro{% endblock %}
+{% block header_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+    <!-- Total Productos -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Productos</span>
+            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
+                <i class="fa-solid fa-box-archive text-blue-600 text-sm"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-slate-800">{{ total_products }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ total_categories }} categorias activas</p>
+    </div>
+
+    <!-- Stock Total -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unidades en Stock</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <i class="fa-solid fa-layer-group text-emerald-600 text-sm"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-slate-800">{{ total_stock|floatformat:0 }}</p>
+        <p class="text-xs text-slate-400 mt-1">Valor total: ${{ total_value|floatformat:2 }}</p>
+    </div>
+
+    <!-- Alertas de Stock -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alertas de Stock</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-amber-600">{{ low_stock_count }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ out_of_stock_count }} sin stock</p>
+    </div>
+
+    <!-- Movimientos hoy -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Movimientos Hoy</span>
+            <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <i class="fa-solid fa-arrow-right-arrow-left text-indigo-600 text-sm"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-slate-800">{{ today_transactions }}</p>
+        {% if user.is_admin_role %}
+        <p class="text-xs text-slate-400 mt-1">{{ total_users }} usuarios en el sistema</p>
+        {% else %}
+        <p class="text-xs text-slate-400 mt-1">Transacciones registradas hoy</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Graficos de movimientos y distribucion -->
+    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+        <!-- Grafico entradas vs salidas -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-700 mb-4">Entradas vs Salidas</h3>
+            <div class="relative h-48">
+                <canvas id="movimientosChart"></canvas>
+            </div>
+            <div class="flex items-center justify-center gap-4 mt-3 text-xs text-slate-500">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>Entradas ({{ entradas_count }})</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>Salidas ({{ salidas_count }})</span>
+            </div>
+        </div>
+
+        <!-- Grafico distribucion por categoria -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-700 mb-4">Productos por Categoria</h3>
+            <div class="relative h-48">
+                <canvas id="categoriaChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Acciones rapidas segun rol -->
+        <div class="sm:col-span-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+            <h3 class="text-sm font-semibold mb-3 opacity-80 uppercase tracking-wider">Acciones Rapidas</h3>
+            <div class="flex flex-wrap gap-2">
+                <a href="{% url 'transaction_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-plus-minus"></i> Registrar Movimiento
+                </a>
+                <a href="{% url 'product_list' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-magnifying-glass"></i> Ver Productos
+                </a>
+                {% if not user.is_operario_role %}
+                <a href="{% url 'product_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-plus"></i> Nuevo Producto
+                </a>
+                <a href="{% url 'category_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-tag"></i> Nueva Categoria
+                </a>
+                {% endif %}
+                {% if user.is_admin_role %}
+                <a href="{% url 'user_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-user-plus"></i> Nuevo Usuario
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel lateral: alertas y movimientos recientes -->
+    <div class="space-y-6">
+
+        <!-- Productos con stock bajo -->
+        {% if low_stock_products %}
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-slate-700">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1.5"></i>Stock Critico
+                </h3>
+                <a href="{% url 'product_list' %}?stock_status=low" class="text-xs text-indigo-600 hover:underline">Ver todos</a>
+            </div>
+            <div class="space-y-2">
+                {% for product in low_stock_products %}
+                <div class="flex items-center justify-between p-2.5 rounded-lg {% if product.stock_actual == 0 %}bg-rose-50{% else %}bg-amber-50{% endif %}">
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold text-slate-800 truncate">{{ product.name }}</p>
+                        <p class="text-[10px] text-slate-500">{{ product.sku }}</p>
+                    </div>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2
+                        {% if product.stock_actual == 0 %}bg-rose-100 text-rose-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                        {{ product.stock_actual }} uds
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Movimientos recientes -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-slate-700">Ultimos Movimientos</h3>
+                <a href="{% url 'transaction_list' %}" class="text-xs text-indigo-600 hover:underline">Ver todos</a>
+            </div>
+            <div class="space-y-2.5">
+                {% for tx in recent_transactions %}
+                <div class="flex items-start gap-2.5">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5
+                        {% if tx.transaction_type == 'ENTRADA' %}bg-emerald-100{% else %}bg-rose-100{% endif %}">
+                        <i class="fa-solid text-[10px]
+                            {% if tx.transaction_type == 'ENTRADA' %}fa-arrow-down text-emerald-600{% else %}fa-arrow-up text-rose-600{% endif %}"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-medium text-slate-800 truncate">{{ tx.product.name }}</p>
+                        <p class="text-[10px] text-slate-500">
+                            {{ tx.quantity }} uds &bull; {{ tx.user.username }}
+                        </p>
+                    </div>
+                    <span class="text-[10px] text-slate-400 shrink-0">
+                        {{ tx.created_at|date:"d/m H:i" }}
+                    </span>
+                </div>
+                {% empty %}
+                <p class="text-xs text-slate-400 text-center py-4">No hay movimientos registrados aun.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Chart: Entradas vs Salidas (Doughnut)
+const movCtx = document.getElementById('movimientosChart');
+if (movCtx) {
+    new Chart(movCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Entradas', 'Salidas'],
+            datasets: [{
+                data: [{{ entradas_count }}, {{ salidas_count }}],
+                backgroundColor: ['#10b981', '#f43f5e'],
+                borderWidth: 0,
+                hoverOffset: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            cutout: '70%',
+        }
+    });
+}
+
+// Chart: Distribucion por categoria (Bar)
+const catCtx = document.getElementById('categoriaChart');
+const catLabels = [{% for c in categories_distribution %}"{{ c.name }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+const catData = [{% for c in categories_distribution %}{{ c.prod_count }}{% if not forloop.last %},{% endif %}{% endfor %}];
+if (catCtx && catLabels.length > 0) {
+    new Chart(catCtx, {
+        type: 'bar',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catData,
+                backgroundColor: '#818cf8',
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                y: { grid: { color: '#f1f5f9' }, ticks: { stepSize: 1, font: { size: 10 } }, beginAtZero: true },
+            }
+        }
+    });
+}
+</script>
+{% endblock %}
