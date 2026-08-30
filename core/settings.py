@@ -100,6 +100,10 @@ if not USE_SQLITE and env('DATABASE_URL', default=''):
     }
     if 'postgres' in DATABASES['default']['ENGINE']:
         DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+        DATABASES['default']['CONN_MAX_AGE'] = 0
+        if 'OPTIONS' not in DATABASES['default']:
+            DATABASES['default']['OPTIONS'] = {}
+        DATABASES['default']['OPTIONS']['connect_timeout'] = 10
 else:
     DATABASES = {
         'default': {
