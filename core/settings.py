@@ -22,7 +22,19 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-7gs4fo&rad(xwj823qtj&lgv
 
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+# Allow all hosts and .onrender.com domains
+ALLOWED_HOSTS = ['*']
+
+# HTTPS / Proxy configuration for Render
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'https://inventario-django-kh9i.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 
 
 # Application definition
