@@ -28,7 +28,7 @@
     <!-- Google Font Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Alpine.js -->
@@ -49,13 +49,44 @@
                 <!-- Brand / Logo -->
                 <div class="h-16 flex items-center px-6 bg-slate-950 border-b border-slate-800">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/30">
-                            <i class="fa-solid fa-boxes-stacked text-lg"></i>
+                        <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-md
+                            {% if user.role == 'admin' %}bg-purple-600 shadow-purple-500/30
+                            {% elif user.role == 'bodeguero' %}bg-blue-600 shadow-blue-500/30
+                            {% else %}bg-emerald-600 shadow-emerald-500/30{% endif %}">
+                            <i class="fa-solid fa-boxes-stacked text-base"></i>
                         </div>
                         <div>
-                            <span class="font-bold text-white tracking-wide text-base">Inventario Pro</span>
-                            <span class="block text-[10px] text-slate-400 font-medium uppercase tracking-wider">Django 5 + Supabase</span>
+                            <span class="font-bold text-white tracking-wide text-sm">Inventario Pro</span>
+                            <span class="block text-[10px] font-medium uppercase tracking-wider
+                                {% if user.role == 'admin' %}text-purple-400
+                                {% elif user.role == 'bodeguero' %}text-blue-400
+                                {% else %}text-emerald-400{% endif %}">
+                                {{ user.get_role_display }}
+                            </span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Banner Informativo de Perfil en Sidebar -->
+                <div class="px-4 pt-4 pb-2">
+                    <div class="p-3 rounded-xl border text-xs
+                        {% if user.role == 'admin' %}bg-purple-950/40 border-purple-800/40 text-purple-200
+                        {% elif user.role == 'bodeguero' %}bg-blue-950/40 border-blue-800/40 text-blue-200
+                        {% else %}bg-emerald-950/40 border-emerald-800/40 text-emerald-200{% endif %}">
+                        <p class="font-bold flex items-center gap-1.5">
+                            <i class="fa-solid 
+                                {% if user.role == 'admin' %}fa-shield-halved text-purple-400
+                                {% elif user.role == 'bodeguero' %}fa-warehouse text-blue-400
+                                {% else %}fa-person-digging text-emerald-400{% endif %}"></i>
+                            {% if user.role == 'admin' %}Modo Administrador
+                            {% elif user.role == 'bodeguero' %}Modo Jefe de Bodega
+                            {% else %}Modo Operario de Piso{% endif %}
+                        </p>
+                        <p class="text-[11px] opacity-80 mt-1">
+                            {% if user.role == 'admin' %}Control total, auditoría y usuarios.
+                            {% elif user.role == 'bodeguero' %}Control de stock, compras y catálogo.
+                            {% else %}Registro ágil de entradas y salidas.{% endif %}
+                        </p>
                     </div>
                 </div>
 
@@ -70,29 +101,29 @@
                     <!-- Productos -->
                     <a href="{% url 'product_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'product' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
                         <i class="fa-solid fa-box-archive w-5 text-center"></i>
-                        <span>Productos</span>
+                        <span>{% if user.is_operario_role %}Consulta Productos{% else %}Catálogo Productos{% endif %}</span>
                     </a>
 
-                    <!-- Categorias -->
+                    <!-- Categorías -->
                     <a href="{% url 'category_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'category' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
                         <i class="fa-solid fa-tags w-5 text-center"></i>
-                        <span>Categorias</span>
+                        <span>Categorías</span>
                     </a>
 
-                    <!-- Transacciones de Stock -->
+                    <!-- Movimientos de Stock -->
                     <a href="{% url 'transaction_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'transaction' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
                         <i class="fa-solid fa-arrow-right-arrow-left w-5 text-center"></i>
                         <span>Movimientos</span>
                     </a>
 
-                    <!-- Gestion de Usuarios (Solo Admin) -->
+                    <!-- Gestión de Usuarios (Solo Admin) -->
                     {% if user.is_admin_role %}
                     <div class="pt-4 pb-1">
-                        <span class="px-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Administracion</span>
+                        <span class="px-3.5 text-[11px] font-semibold text-purple-400 uppercase tracking-wider">Control Maestro</span>
                     </div>
-                    <a href="{% url 'user_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'user' in request.resolver_match.url_name %}bg-indigo-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
-                        <i class="fa-solid fa-users-gear w-5 text-center"></i>
-                        <span>Gestion Usuarios</span>
+                    <a href="{% url 'user_list' %}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors {% if 'user' in request.resolver_match.url_name %}bg-purple-600 text-white shadow-sm{% else %}hover:bg-slate-800 hover:text-white text-slate-400{% endif %}">
+                        <i class="fa-solid fa-users-gear w-5 text-center text-purple-400"></i>
+                        <span>Gestión Usuarios</span>
                     </a>
                     {% endif %}
                 </nav>
@@ -102,7 +133,10 @@
             <div class="p-4 border-t border-slate-800 bg-slate-950/60">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sm text-indigo-400 shrink-0">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0
+                            {% if user.role == 'admin' %}bg-purple-700
+                            {% elif user.role == 'bodeguero' %}bg-blue-700
+                            {% else %}bg-emerald-700{% endif %}">
                             {{ user.username|make_list|first|upper }}
                         </div>
                         <div class="truncate">
@@ -115,14 +149,14 @@
                             </span>
                         </div>
                     </div>
-                    <a href="{% url 'logout' %}" title="Cerrar sesion" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors">
+                    <a href="{% url 'logout' %}" title="Cerrar sesión" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     </a>
                 </div>
             </div>
         </aside>
 
-        <!-- Backdrop para movil -->
+        <!-- Backdrop para móvil -->
         <div 
             x-show="sidebarOpen" 
             x-transition:enter="transition-opacity ease-linear duration-300"
@@ -143,17 +177,31 @@
                     <button @click="sidebarOpen = !sidebarOpen" class="p-2 text-slate-500 hover:text-slate-700 md:hidden rounded-lg hover:bg-slate-100">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <h1 class="text-lg sm:text-xl font-bold text-slate-800">
-                        {% block header_title %}Panel de Control{% endblock %}
-                    </h1>
+                    <div>
+                        <h1 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                            {% block header_title %}Panel de Control{% endblock %}
+                        </h1>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- Boton Rapido Registrar Movimiento (Accesible para todos los roles) -->
-                    <a href="{% url 'transaction_create' %}" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium shadow-sm transition-all">
-                        <i class="fa-solid fa-plus-minus"></i>
-                        <span class="hidden sm:inline">Nuevo Movimiento</span>
+                    <!-- Botón Rápido Contextual según el Rol -->
+                    {% if user.is_operario_role %}
+                    <a href="{% url 'transaction_create' %}" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-semibold shadow-sm transition-all animate-pulse">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Registrar Movimiento</span>
                     </a>
+                    {% elif user.is_bodeguero_role %}
+                    <a href="{% url 'product_create' %}" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-semibold shadow-sm transition-all">
+                        <i class="fa-solid fa-plus"></i>
+                        <span class="hidden sm:inline">Nuevo Producto</span>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'user_create' %}" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-purple-600 text-white hover:bg-purple-700 text-sm font-semibold shadow-sm transition-all">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span class="hidden sm:inline">Nuevo Usuario</span>
+                    </a>
+                    {% endif %}
 
                     <!-- Enlace Perfil -->
                     <a href="{% url 'profile' %}" class="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 text-sm flex items-center gap-2">

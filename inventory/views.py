@@ -1,4 +1,4 @@
-﻿from datetime import date
+from datetime import date
 from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -87,12 +87,40 @@ def dashboard_view(request):
     today_transactions = StockTransaction.objects.filter(created_at__date=today).count()
 
     recent_transactions = StockTransaction.objects.select_related('product', 'user').all()[:8]
-    low_stock_products = Product.objects.filter(stock_actual__lte=5).select_related('category')[:6]
+    low_stock_products = Product.objects.filter(stock_actual__lte=5).select_related('category').order_by('stock_actual')[:6]
 
     # Distribución para gráficos
     categories_distribution = Category.objects.annotate(prod_count=Count('products')).filter(prod_count__gt=0)[:6]
     entradas_count = StockTransaction.objects.filter(transaction_type=StockTransaction.TransactionType.ENTRADA).count()
     salidas_count = StockTransaction.objects.filter(transaction_type=StockTransaction.TransactionType.SALIDA).count()
+
+    # 1. Datos específicos para Administrador
+    admin_active_users = CustomUser.objects.filter(is_active=True).count()
+    admin_users_by_role = {
+        'admins': CustomUser.objects.filter(role='admin').count(),
+        'bodegueros': CustomUser.objects.filter(role='bodeguero').count(),
+        'operarios': CustomUser.objects.filter(role='operario').count(),
+    }
+    top_valued_products = Product.objects.annotate(
+        total_val=F('stock_actual') * F('price')
+    ).select_related('category').order_by('-total_val')[:5]
+
+    # 2. Datos específicos para Jefe de Bodega
+    warehouse_restock_list = Product.objects.filter(stock_actual__lte=5).select_related('category').order_by('stock_actual')[:10]
+    category_stock_breakdown = Category.objects.annotate(
+        prod_count=Count('products'),
+        units_sum=Sum('products__stock_actual')
+    ).order_by('-units_sum')[:5]
+    today_in_units = StockTransaction.objects.filter(created_at__date=today, transaction_type='ENTRADA').aggregate(total=Sum('quantity'))['total'] or 0
+    today_out_units = StockTransaction.objects.filter(created_at__date=today, transaction_type='SALIDA').aggregate(total=Sum('quantity'))['total'] or 0
+
+    # 3. Datos específicos para Operario
+    my_today_txs = StockTransaction.objects.filter(user=user, created_at__date=today)
+    my_today_count = my_today_txs.count()
+    my_today_entradas = my_today_txs.filter(transaction_type='ENTRADA').count()
+    my_today_salidas = my_today_txs.filter(transaction_type='SALIDA').count()
+    my_recent_txs = StockTransaction.objects.filter(user=user).select_related('product')[:8]
+    quick_products = Product.objects.all().order_by('name')[:8]
 
     context = {
         'total_products': total_products,
@@ -108,6 +136,21 @@ def dashboard_view(request):
         'categories_distribution': categories_distribution,
         'entradas_count': entradas_count,
         'salidas_count': salidas_count,
+        # Admin
+        'admin_active_users': admin_active_users,
+        'admin_users_by_role': admin_users_by_role,
+        'top_valued_products': top_valued_products,
+        # Bodeguero
+        'warehouse_restock_list': warehouse_restock_list,
+        'category_stock_breakdown': category_stock_breakdown,
+        'today_in_units': today_in_units,
+        'today_out_units': today_out_units,
+        # Operario
+        'my_today_count': my_today_count,
+        'my_today_entradas': my_today_entradas,
+        'my_today_salidas': my_today_salidas,
+        'my_recent_txs': my_recent_txs,
+        'quick_products': quick_products,
     }
     return render(request, 'inventory/dashboard.html', context)
 

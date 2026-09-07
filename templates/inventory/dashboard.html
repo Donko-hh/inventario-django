@@ -1,182 +1,495 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Inventario Pro{% endblock %}
-{% block header_title %}Dashboard{% endblock %}
+{% block title %}
+{% if user.role == 'admin' %}Panel Ejecutivo & Auditoría - Inventario Pro
+{% elif user.role == 'bodeguero' %}Centro de Control de Bodega - Inventario Pro
+{% else %}Terminal de Operaciones de Piso - Inventario Pro{% endif %}
+{% endblock %}
+
+{% block header_title %}
+{% if user.role == 'admin' %}
+<span class="text-purple-600 mr-2"><i class="fa-solid fa-shield-halved"></i></span> Panel de Control Ejecutivo (Administrador)
+{% elif user.role == 'bodeguero' %}
+<span class="text-blue-600 mr-2"><i class="fa-solid fa-warehouse"></i></span> Centro de Operaciones y Almacén (Jefe de Bodega)
+{% else %}
+<span class="text-emerald-600 mr-2"><i class="fa-solid fa-bolt"></i></span> Terminal de Registro de Piso (Operario)
+{% endif %}
+{% endblock %}
 
 {% block content %}
-<!-- KPI Cards -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
-    <!-- Total Productos -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Productos</span>
-            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
-                <i class="fa-solid fa-box-archive text-blue-600 text-sm"></i>
-            </div>
+{# ========================================================================= #}
+{# 1. VISTA EXCLUSIVA PARA ADMINISTRADOR                                    #}
+{# ========================================================================= #}
+{% if user.is_admin_role %}
+<!-- Banner Ejecutivo Admin -->
+<div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-xs font-semibold uppercase tracking-wider mb-2 border border-purple-400/30">
+                <i class="fa-solid fa-crown text-[10px]"></i> Perfil Maestro & Auditoría
+            </span>
+            <h2 class="text-2xl font-black tracking-tight">Bienvenido, {{ user.get_full_name|default:user.username }}</h2>
+            <p class="text-purple-200 text-sm mt-1 max-w-xl">
+                Tienes acceso total a métricas financieras, administración de roles de usuarios, auditoría global y parametrización del catálogo.
+            </p>
         </div>
-        <p class="text-3xl font-bold text-slate-800">{{ total_products }}</p>
-        <p class="text-xs text-slate-400 mt-1">{{ total_categories }} categorias activas</p>
-    </div>
-
-    <!-- Stock Total -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unidades en Stock</span>
-            <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <i class="fa-solid fa-layer-group text-emerald-600 text-sm"></i>
-            </div>
+        <div class="flex flex-wrap gap-2.5">
+            <a href="{% url 'user_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-600/30 transition-all">
+                <i class="fa-solid fa-users-gear"></i> Gestionar Usuarios
+            </a>
+            <a href="{% url 'product_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all border border-white/10">
+                <i class="fa-solid fa-boxes-stacked"></i> Catálogo Completo
+            </a>
         </div>
-        <p class="text-3xl font-bold text-slate-800">{{ total_stock|floatformat:0 }}</p>
-        <p class="text-xs text-slate-400 mt-1">Valor total: ${{ total_value|floatformat:2 }}</p>
-    </div>
-
-    <!-- Alertas de Stock -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alertas de Stock</span>
-            <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center">
-                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm"></i>
-            </div>
-        </div>
-        <p class="text-3xl font-bold text-amber-600">{{ low_stock_count }}</p>
-        <p class="text-xs text-slate-400 mt-1">{{ out_of_stock_count }} sin stock</p>
-    </div>
-
-    <!-- Movimientos hoy -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Movimientos Hoy</span>
-            <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
-                <i class="fa-solid fa-arrow-right-arrow-left text-indigo-600 text-sm"></i>
-            </div>
-        </div>
-        <p class="text-3xl font-bold text-slate-800">{{ today_transactions }}</p>
-        {% if user.is_admin_role %}
-        <p class="text-xs text-slate-400 mt-1">{{ total_users }} usuarios en el sistema</p>
-        {% else %}
-        <p class="text-xs text-slate-400 mt-1">Transacciones registradas hoy</p>
-        {% endif %}
     </div>
 </div>
 
+<!-- KPIs Ejecutivos Admin -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Valorización de Inventario</span>
+            <div class="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
+                <i class="fa-solid fa-dollar-sign"></i>
+            </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-extrabold text-slate-800">${{ total_value|floatformat:2 }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ total_stock|floatformat:0 }} unidades totales en custodia</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Usuarios & Cuentas</span>
+            <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <i class="fa-solid fa-users"></i>
+            </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-extrabold text-slate-800">{{ total_users }}</p>
+        <p class="text-xs text-emerald-600 mt-1 font-semibold">{{ admin_active_users }} cuentas activas</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Catálogo Maestro</span>
+            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                <i class="fa-solid fa-box-open"></i>
+            </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-extrabold text-slate-800">{{ total_products }}</p>
+        <p class="text-xs text-slate-400 mt-1">en {{ total_categories }} categorías</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Transacciones Hoy</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-arrow-right-arrow-left"></i>
+            </div>
+        </div>
+        <p class="text-2xl sm:text-3xl font-extrabold text-slate-800">{{ today_transactions }}</p>
+        <p class="text-xs text-slate-400 mt-1">Auditoría global en tiempo real</p>
+    </div>
+</div>
+
+<!-- Cuadrícula Principal Admin -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Panel de Roles y Accesos -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-user-shield text-purple-600"></i> Desglose de Perfiles
+            </h3>
+            <a href="{% url 'user_list' %}" class="text-xs font-semibold text-purple-600 hover:underline">Ver todos</a>
+        </div>
+        <div class="space-y-3">
+            <div class="p-3.5 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full bg-purple-600"></span>
+                    <span class="text-sm font-semibold text-purple-950">Administradores</span>
+                </div>
+                <span class="text-sm font-bold text-purple-700 bg-white px-2.5 py-0.5 rounded-full border border-purple-200">
+                    {{ admin_users_by_role.admins }}
+                </span>
+            </div>
+            <div class="p-3.5 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                    <span class="text-sm font-semibold text-blue-950">Jefes de Bodega</span>
+                </div>
+                <span class="text-sm font-bold text-blue-700 bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
+                    {{ admin_users_by_role.bodegueros }}
+                </span>
+            </div>
+            <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
+                    <span class="text-sm font-semibold text-emerald-950">Operarios de Piso</span>
+                </div>
+                <span class="text-sm font-bold text-emerald-700 bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    {{ admin_users_by_role.operarios }}
+                </span>
+            </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-100">
+            <a href="{% url 'user_create' %}" class="w-full py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs flex items-center justify-center gap-2 transition-colors">
+                <i class="fa-solid fa-user-plus"></i> Crear Nuevo Usuario
+            </a>
+        </div>
+    </div>
+
+    <!-- Top Productos de Mayor Valor Monetario -->
+    <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-indigo-600"></i> Top Activos de Mayor Valorización
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                    <tr class="border-b border-slate-100 text-slate-400 text-left">
+                        <th class="pb-2.5 font-bold uppercase">Producto / SKU</th>
+                        <th class="pb-2.5 font-bold uppercase">Categoría</th>
+                        <th class="pb-2.5 font-bold uppercase text-right">Precio Unit.</th>
+                        <th class="pb-2.5 font-bold uppercase text-right">Stock</th>
+                        <th class="pb-2.5 font-bold uppercase text-right">Total Valorizado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for p in top_valued_products %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3">
+                            <p class="font-bold text-slate-800">{{ p.name }}</p>
+                            <p class="text-[10px] text-slate-400 font-mono">{{ p.sku }}</p>
+                        </td>
+                        <td class="py-3 text-slate-500">{{ p.category.name }}</td>
+                        <td class="py-3 text-right font-semibold text-slate-700">${{ p.price|floatformat:2 }}</td>
+                        <td class="py-3 text-right font-bold text-indigo-600">{{ p.stock_actual }}</td>
+                        <td class="py-3 text-right font-extrabold text-slate-800">${{ p.total_val|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="py-6 text-center text-slate-400">Sin registros.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# ========================================================================= #}
+{# 2. VISTA EXCLUSIVA PARA JEFE DE BODEGA                                    #}
+{# ========================================================================= #}
+{% elif user.is_bodeguero_role %}
+<!-- Banner Jefe de Bodega -->
+<div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/30 text-blue-200 text-xs font-semibold uppercase tracking-wider mb-2 border border-blue-400/30">
+                <i class="fa-solid fa-dolly text-[10px]"></i> Gestión de Almacén & Reposición
+            </span>
+            <h2 class="text-2xl font-black tracking-tight">Terminal de Bodega — {{ user.get_full_name|default:user.username }}</h2>
+            <p class="text-blue-200 text-sm mt-1 max-w-xl">
+                Monitorea el nivel de stock crítico, recepciona lotes de compras y administra el catálogo de productos y categorías.
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+            <a href="{% url 'product_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-md shadow-blue-600/30 transition-all">
+                <i class="fa-solid fa-plus"></i> + Nuevo Producto
+            </a>
+            <a href="{% url 'category_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all border border-white/10">
+                <i class="fa-solid fa-tag"></i> + Nueva Categoría
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- KPIs Bodega -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Unidades en Bodega</span>
+            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-extrabold text-slate-800">{{ total_stock|floatformat:0 }}</p>
+        <p class="text-xs text-slate-400 mt-1">en {{ total_products }} productos activos</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Alertas de Reposición</span>
+            <div class="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-extrabold text-rose-600">{{ low_stock_count }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ out_of_stock_count }} productos agotados</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingresos Hoy (Entradas)</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-arrow-down"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-extrabold text-emerald-600">+{{ today_in_units|floatformat:0 }}</p>
+        <p class="text-xs text-slate-400 mt-1">unidades recibidas hoy</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Despachos Hoy (Salidas)</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                <i class="fa-solid fa-arrow-up"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-extrabold text-amber-600">-{{ today_out_units|floatformat:0 }}</p>
+        <p class="text-xs text-slate-400 mt-1">unidades despachadas hoy</p>
+    </div>
+</div>
+
+<!-- Centro de Alerta y Reposición Inmediata -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation text-rose-500"></i> Centro de Alerta de Reposición Urgente
+            </h3>
+            <span class="text-xs bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full font-bold">Stock &le; 5</span>
+        </div>
+        <div class="space-y-3">
+            {% for prod in warehouse_restock_list %}
+            <div class="p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3
+                {% if prod.stock_actual == 0 %}bg-rose-50/70 border-rose-200{% else %}bg-amber-50/70 border-amber-200{% endif %}">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800 text-sm">{{ prod.name }}</span>
+                        <span class="text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">{{ prod.sku }}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Categoría: {{ prod.category.name }}</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-[10px] uppercase font-bold text-slate-400">Stock Actual</p>
+                        <p class="text-lg font-black {% if prod.stock_actual == 0 %}text-rose-600{% else %}text-amber-600{% endif %}">
+                            {{ prod.stock_actual }} <span class="text-xs font-medium">uds</span>
+                        </p>
+                    </div>
+                    <a href="{% url 'transaction_create' %}?product={{ prod.pk }}" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus-circle"></i> Reabastecer
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-slate-400 bg-slate-50 rounded-xl">
+                <i class="fa-solid fa-circle-check text-emerald-500 text-2xl mb-2 block"></i>
+                ¡Excelente! No hay productos con stock crítico en este momento.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Ocupación por Categoría -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-blue-600"></i> Stock por Categoría
+        </h3>
+        <div class="space-y-3.5">
+            {% for cat in category_stock_breakdown %}
+            <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="font-semibold text-slate-700">{{ cat.name }}</span>
+                    <span class="font-bold text-slate-800">{{ cat.units_sum|default:0 }} uds</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full" style="width: {% widthratio cat.units_sum total_stock 100 %}%"></div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-0.5">{{ cat.prod_count }} productos asociados</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# ========================================================================= #}
+{# 3. VISTA EXCLUSIVA PARA OPERARIO DE PISO                                  #}
+{# ========================================================================= #}
+{% else %}
+<!-- Banner Operario de Piso -->
+<div class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/30 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-2 border border-emerald-400/30">
+                <i class="fa-solid fa-barcode text-[10px]"></i> Terminal Rápido de Piso
+            </span>
+            <h2 class="text-2xl font-black tracking-tight">Turno Activo: {{ user.get_full_name|default:user.username }}</h2>
+            <p class="text-emerald-200 text-sm mt-1 max-w-xl">
+                Registra rápidamente las entradas de compras recibidas o las salidas por despacho de clientes con validación automática de stock.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'transaction_create' %}" class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-black shadow-lg shadow-emerald-500/30 transition-all">
+                <i class="fa-solid fa-plus-minus text-base"></i> + REGISTRAR MOVIMIENTO
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- KPIs del Turno del Operario -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Mis Movimientos Hoy</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-black text-slate-800">{{ my_today_count }}</p>
+        <p class="text-xs text-emerald-600 font-semibold mt-1">Registrados en tu turno de hoy</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Mis Entradas (+)</span>
+            <div class="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">
+                <i class="fa-solid fa-arrow-down"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-black text-teal-600">{{ my_today_entradas }}</p>
+        <p class="text-xs text-slate-400 mt-1">recepciones procesadas</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Mis Salidas (-)</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                <i class="fa-solid fa-arrow-up"></i>
+            </div>
+        </div>
+        <p class="text-3xl font-black text-amber-600">{{ my_today_salidas }}</p>
+        <p class="text-xs text-slate-400 mt-1">despachos realizados</p>
+    </div>
+</div>
+
+<!-- Acceso Rápido a Productos para el Operario -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-boxes-stacked text-emerald-600"></i> Consulta Rápida & Registro Directo
+            </h3>
+            <a href="{% url 'product_list' %}" class="text-xs font-semibold text-emerald-600 hover:underline">Ver catálogo completo</a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {% for prod in quick_products %}
+            <div class="p-3.5 rounded-xl border border-slate-100 hover:border-emerald-200 bg-slate-50/60 transition-all flex items-center justify-between">
+                <div class="min-w-0 flex-1 pr-2">
+                    <p class="font-bold text-xs text-slate-800 truncate">{{ prod.name }}</p>
+                    <p class="text-[10px] text-slate-400 font-mono">{{ prod.sku }} &bull; Stock: <strong class="{% if prod.stock_actual == 0 %}text-rose-600{% elif prod.stock_actual <= 5 %}text-amber-600{% else %}text-emerald-600{% endif %}">{{ prod.stock_actual }}</strong></p>
+                </div>
+                <a href="{% url 'transaction_create' %}?product={{ prod.pk }}" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shrink-0 transition-colors">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Mover
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Mis Movimientos Recientes en este Turno -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-slate-500"></i> Mis Registros Recientes
+        </h3>
+        <div class="space-y-2.5">
+            {% for tx in my_recent_txs %}
+            <div class="flex items-start gap-2.5 text-xs p-2 rounded-lg bg-slate-50">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5
+                    {% if tx.transaction_type == 'ENTRADA' %}bg-emerald-100 text-emerald-600{% else %}bg-rose-100 text-rose-600{% endif %}">
+                    <i class="fa-solid {% if tx.transaction_type == 'ENTRADA' %}fa-arrow-down{% else %}fa-arrow-up{% endif %} text-[9px]"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="font-bold text-slate-800 truncate">{{ tx.product.name }}</p>
+                    <p class="text-[10px] text-slate-500">{{ tx.get_transaction_type_display }} de {{ tx.quantity }} uds &bull; {{ tx.created_at|date:"H:i" }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-xs text-slate-400 py-6 text-center">Aún no has registrado movimientos hoy.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ========================================================================= #}
+{# SECCIÓN GLOBAL DE GRÁFICOS Y ACTIVIDAD RECIENTE                            #}
+{# ========================================================================= #}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-    <!-- Graficos de movimientos y distribucion -->
+    <!-- Gráficos -->
     <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-        <!-- Grafico entradas vs salidas -->
+        <!-- Gráfico entradas vs salidas -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <h3 class="text-sm font-semibold text-slate-700 mb-4">Entradas vs Salidas</h3>
-            <div class="relative h-48">
+            <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-indigo-500"></i> Proporción de Movimientos
+            </h3>
+            <div class="relative h-44">
                 <canvas id="movimientosChart"></canvas>
             </div>
-            <div class="flex items-center justify-center gap-4 mt-3 text-xs text-slate-500">
-                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>Entradas ({{ entradas_count }})</span>
-                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>Salidas ({{ salidas_count }})</span>
+            <div class="flex items-center justify-center gap-4 mt-3 text-xs text-slate-500 font-semibold">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Entradas ({{ entradas_count }})</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Salidas ({{ salidas_count }})</span>
             </div>
         </div>
 
-        <!-- Grafico distribucion por categoria -->
+        <!-- Gráfico distribución por categoría -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <h3 class="text-sm font-semibold text-slate-700 mb-4">Productos por Categoria</h3>
-            <div class="relative h-48">
+            <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-chart-column text-indigo-500"></i> Productos por Categoría
+            </h3>
+            <div class="relative h-44">
                 <canvas id="categoriaChart"></canvas>
             </div>
         </div>
-
-        <!-- Acciones rapidas segun rol -->
-        <div class="sm:col-span-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
-            <h3 class="text-sm font-semibold mb-3 opacity-80 uppercase tracking-wider">Acciones Rapidas</h3>
-            <div class="flex flex-wrap gap-2">
-                <a href="{% url 'transaction_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
-                    <i class="fa-solid fa-plus-minus"></i> Registrar Movimiento
-                </a>
-                <a href="{% url 'product_list' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
-                    <i class="fa-solid fa-magnifying-glass"></i> Ver Productos
-                </a>
-                {% if not user.is_operario_role %}
-                <a href="{% url 'product_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
-                    <i class="fa-solid fa-plus"></i> Nuevo Producto
-                </a>
-                <a href="{% url 'category_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
-                    <i class="fa-solid fa-tag"></i> Nueva Categoria
-                </a>
-                {% endif %}
-                {% if user.is_admin_role %}
-                <a href="{% url 'user_create' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-sm font-medium transition-colors">
-                    <i class="fa-solid fa-user-plus"></i> Nuevo Usuario
-                </a>
-                {% endif %}
-            </div>
-        </div>
     </div>
 
-    <!-- Panel lateral: alertas y movimientos recientes -->
-    <div class="space-y-6">
-
-        <!-- Productos con stock bajo -->
-        {% if low_stock_products %}
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-slate-700">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1.5"></i>Stock Critico
-                </h3>
-                <a href="{% url 'product_list' %}?stock_status=low" class="text-xs text-indigo-600 hover:underline">Ver todos</a>
-            </div>
-            <div class="space-y-2">
-                {% for product in low_stock_products %}
-                <div class="flex items-center justify-between p-2.5 rounded-lg {% if product.stock_actual == 0 %}bg-rose-50{% else %}bg-amber-50{% endif %}">
-                    <div class="min-w-0">
-                        <p class="text-xs font-semibold text-slate-800 truncate">{{ product.name }}</p>
-                        <p class="text-[10px] text-slate-500">{{ product.sku }}</p>
-                    </div>
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2
-                        {% if product.stock_actual == 0 %}bg-rose-100 text-rose-700{% else %}bg-amber-100 text-amber-700{% endif %}">
-                        {{ product.stock_actual }} uds
-                    </span>
-                </div>
-                {% endfor %}
-            </div>
+    <!-- Actividad Reciente del Sistema -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-timeline text-indigo-500"></i> Registro de Actividad
+            </h3>
+            <a href="{% url 'transaction_list' %}" class="text-xs text-indigo-600 font-semibold hover:underline">Ver historial</a>
         </div>
-        {% endif %}
-
-        <!-- Movimientos recientes -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-slate-700">Ultimos Movimientos</h3>
-                <a href="{% url 'transaction_list' %}" class="text-xs text-indigo-600 hover:underline">Ver todos</a>
-            </div>
-            <div class="space-y-2.5">
-                {% for tx in recent_transactions %}
-                <div class="flex items-start gap-2.5">
-                    <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5
-                        {% if tx.transaction_type == 'ENTRADA' %}bg-emerald-100{% else %}bg-rose-100{% endif %}">
-                        <i class="fa-solid text-[10px]
-                            {% if tx.transaction_type == 'ENTRADA' %}fa-arrow-down text-emerald-600{% else %}fa-arrow-up text-rose-600{% endif %}"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-medium text-slate-800 truncate">{{ tx.product.name }}</p>
-                        <p class="text-[10px] text-slate-500">
-                            {{ tx.quantity }} uds &bull; {{ tx.user.username }}
-                        </p>
-                    </div>
-                    <span class="text-[10px] text-slate-400 shrink-0">
-                        {{ tx.created_at|date:"d/m H:i" }}
-                    </span>
+        <div class="space-y-2.5">
+            {% for tx in recent_transactions %}
+            <div class="flex items-start gap-2.5 text-xs">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5
+                    {% if tx.transaction_type == 'ENTRADA' %}bg-emerald-100 text-emerald-600{% else %}bg-rose-100 text-rose-600{% endif %}">
+                    <i class="fa-solid text-[10px]
+                        {% if tx.transaction_type == 'ENTRADA' %}fa-arrow-down{% else %}fa-arrow-up{% endif %}"></i>
                 </div>
-                {% empty %}
-                <p class="text-xs text-slate-400 text-center py-4">No hay movimientos registrados aun.</p>
-                {% endfor %}
+                <div class="min-w-0 flex-1">
+                    <p class="font-bold text-slate-800 truncate">{{ tx.product.name }}</p>
+                    <p class="text-[10px] text-slate-400">
+                        {{ tx.quantity }} uds &bull; por <strong class="text-slate-600">@{{ tx.user.username }}</strong>
+                    </p>
+                </div>
+                <span class="text-[10px] text-slate-400 shrink-0 font-medium">
+                    {{ tx.created_at|date:"d/m H:i" }}
+                </span>
             </div>
+            {% empty %}
+            <p class="text-xs text-slate-400 text-center py-4">No hay movimientos registrados aún.</p>
+            {% endfor %}
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-// Chart: Entradas vs Salidas (Doughnut)
+// Chart: Entradas vs Salidas
 const movCtx = document.getElementById('movimientosChart');
 if (movCtx) {
     new Chart(movCtx, {
@@ -184,7 +497,7 @@ if (movCtx) {
         data: {
             labels: ['Entradas', 'Salidas'],
             datasets: [{
-                data: [{{ entradas_count }}, {{ salidas_count }}],
+                data: [{{ entradas_count|default:0 }}, {{ salidas_count|default:0 }}],
                 backgroundColor: ['#10b981', '#f43f5e'],
                 borderWidth: 0,
                 hoverOffset: 4,
@@ -199,7 +512,7 @@ if (movCtx) {
     });
 }
 
-// Chart: Distribucion por categoria (Bar)
+// Chart: Distribución por categoría
 const catCtx = document.getElementById('categoriaChart');
 const catLabels = [{% for c in categories_distribution %}"{{ c.name }}"{% if not forloop.last %},{% endif %}{% endfor %}];
 const catData = [{% for c in categories_distribution %}{{ c.prod_count }}{% if not forloop.last %},{% endif %}{% endfor %}];
