@@ -1,6 +1,15 @@
+import os
 import psycopg
+import environ
 
-conn_str = 'postgresql://postgres.yudvrdhhqwokdptjxeem:inventario.bd@aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require'
+env = environ.Env()
+environ.Env.read_env(os.path.join(os.path.dirname(__file__), '.env'))
+
+conn_str = env('DATABASE_URL', default=None)
+
+if not conn_str:
+    print('DATABASE_URL no configurada en .env')
+    exit(1)
 
 with psycopg.connect(conn_str) as conn:
     with conn.cursor() as cur:

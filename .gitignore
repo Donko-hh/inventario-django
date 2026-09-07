@@ -1,8 +1,27 @@
+# Environment variables
 .env
-.env.local
+.env.*
+!.env.example
+
+# Database
 db.sqlite3
-*.pyc
+db.sqlite3-journal
+
+# Python & Django
+*.py[cod]
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
 .venv/
 staticfiles/
+media/
+
+# OS / Editor
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
